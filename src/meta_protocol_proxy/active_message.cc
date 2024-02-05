@@ -145,7 +145,7 @@ ActiveMessageDecoderFilter::ActiveMessageDecoderFilter(ActiveMessage& parent,
 
 void ActiveMessageDecoderFilter::continueDecoding() {
   ASSERT(activeMessage_.metadata());
-  ENVOY_LOG(debug, "meta protocol: continueDecoding, id is {}",
+  ENVOY_LOG(warn, "meta protocol: continueDecoding, id is {}",
             activeMessage_.metadata()->getRequestId());
   auto state = ActiveMessage::FilterIterationStartState::AlwaysStartFromNext;
   if (0 != activeMessage_.metadata()->originMessage().length()) {
@@ -155,7 +155,7 @@ void ActiveMessageDecoderFilter::continueDecoding() {
   }
   const FilterStatus status = activeMessage_.applyDecoderFilters(this, state);
   if (status == FilterStatus::ContinueIteration) {
-    ENVOY_LOG(debug, "meta protocol response: start upstream");
+    ENVOY_LOG(warn, "meta protocol response: start upstream after decoding");
     // All filters have been executed for the current decoder state.
     if (activeMessage_.pendingStreamDecoded()) {
       // If the filter stack was paused during messageEnd, handle end-of-request details.
@@ -231,7 +231,7 @@ void ActiveMessageEncoderFilter::continueEncoding() {
   }
   const FilterStatus status = activeMessage_.applyEncoderFilters(this, state);
   if (FilterStatus::ContinueIteration == status) {
-    ENVOY_LOG(debug, "All encoding filters have been executed");
+    ENVOY_LOG(warn, "All encoding filters have been executed");
   }
 }
 
@@ -382,12 +382,12 @@ void ActiveMessage::onMessageDecoded(MetadataSharedPtr metadata, MutationSharedP
     auto status = applyDecoderFilters(nullptr, FilterIterationStartState::CanStartFromCurrent);
     switch (status) {
     case FilterStatus::PauseIteration:
-      ENVOY_LOG(debug, "meta protocol {} request: pause calling decoder filters, id is {}",
+      ENVOY_LOG(warn, "meta protocol {} request: pause calling decoder filters, id is {}",
                 connection_manager_.config().applicationProtocol(), metadata->getRequestId());
       pending_stream_decoded_ = true;
       break;
     case FilterStatus::AbortIteration:
-      ENVOY_LOG(debug, "meta protocol {} request: abort calling decoder filters, id is {}",
+      ENVOY_LOG(warn, "meta protocol {} request: abort calling decoder filters, id is {}",
                 connection_manager_.config().applicationProtocol(), metadata->getRequestId());
       connection_manager_.deferredDeleteMessage(*this);
       break;
@@ -402,7 +402,7 @@ void ActiveMessage::onMessageDecoded(MetadataSharedPtr metadata, MutationSharedP
   }
 
   ENVOY_LOG(
-      debug,
+      warn,
       "meta protocol {} request: complete processing of downstream request messages, id is {}",
       connection_manager_.config().applicationProtocol(), metadata->getRequestId());
 }
